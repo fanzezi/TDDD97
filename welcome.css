@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css?family=Cinzel:400,700|Lato:100&display=swap');
+
+body{
+  background-color: #424242;
+}
+#main{
+  width: 600px;
+  margin: 0 auto;
+  margin-top: 100px;
+}
+#logoSlogan{
+  width: 340px
+  height: 400px;
+  float: left;
+}
+#loginBox{
+  width: 250px;
+  height:100px;
+  background-color: #ededed;
+  float:right;
+  margin-left: 10px;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+#loginBox .text{
+  margin-top: 10px;
+}
+#signupBox{
+  width: 250px;
+  height: 290px;
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  background-color: #ededed;
+  float:right;
+}
+
+#signupBox h2{
+  text-align: center;
+  font-size: 15px;
+}
+.text{
+  font-family: 'Lato', sans-serif;
+}
+
+.text label{
+  display: inline-block;
+  text-align: right;
+  width: 100px;
+  padding: 3px;
+}
+select{
+  float: right;
+}
+input{
+  float: right;
+}
+.submitBtn{
+  width: 100px;
+  height: 20px;
+  border: none;
+  float:right;
+}
