@@ -182,6 +182,7 @@ function postWall(){
 
 }
 
+
 function displayWall(){
 
   var getMessages = serverstub.getUserMessagesByToken(userToken);
@@ -209,8 +210,8 @@ function loadMessages(){
       document.getElementById("messageWall").innerHTML += messages[i].content + "<br></p>" ;
     }
   }
-
 }
+
 
 function browseUser(){
 
@@ -226,12 +227,6 @@ function browseUser(){
 
      var userData = userInfo.data;
 
-    // var firstname = userData.firstname;
-    // var familyname = userData.familyname;
-    // var gender = userData.gender;
-    // var city = userData.city;
-    // var country = userData.country;
-    // var data = "Email: " + email + "<br>" + "Firstname: " + firstname + "<br>" + "Familyname: " + familyname + "<br>" + "Gender: " + gender + "<br>" + "City: " + city + "<br>" + "Country: " + country + "<br>";
     document.getElementById("nameBr").innerHTML =   "Name:   " + userData.firstname + " " + userData.familyname;
     document.getElementById("genderBr").innerHTML = "Gender: " + userData.gender;
     document.getElementById("cityBr").innerHTML =   "City:   " + userData.city;
@@ -242,7 +237,37 @@ function browseUser(){
      var data = userInfo.message;
      document.getElementById("errorSearch").innerHTML = data;
    }
-   //document.getElementById("accountInfo").innerHTML = data;
+
+}
+
+function postOnUserWall(){
+  //Get user info
+  var email = document.getElementById("browseuser");
+  
+  var getUser = serverstub.getUserDataByEmail(userToken,email);  //getUserDataByToken(userToken);
+  var userData = getUser.data;
+  // Save post
+  var messWall = document.getElementById("feedbackBox");
+  var newPost = document.getElementById("postBoxBrowse").value;
+  var postMess = serverstub.postMessage(userToken, newPost, email);
+
+  newPost.innerHTML = postMess.message;
+  displayOnUserWall();
+
+}
+
+function displayOnUserWall(){
+  var email = document.getElementById("browseuser");
+  var getMessages = serverstub.getUserMessagesByEmail(userToken,email)
+  if (getMessages.success == true){
+    var messages = getMessages.data;
+    document.getElementById("messageWall").innerHTML = null;
+
+    for(i = 0; i < messages.length; i++){
+      document.getElementById("messageWall").innerHTML += "<p>From: " + messages[i].writer + "<br>";
+      document.getElementById("messageWall").innerHTML += messages[i].content + "<br></p>" ;
+    }
+  }
 }
 
 function signOut(){

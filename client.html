@@ -132,10 +132,17 @@
                           <div id="emailBr">Email:</div>
                       </div>
 
+                      <h3> Make a post on this users wall: </h3>
+                      <form id="makePost" onsubmit="javascript:postOnUserWall(); return false;">
+                        <textarea id="postBoxBrowse" rows="4" cols ="41"></textarea>
+                        <p id ="pMess"> </p>
+                        <input class="submit"  type="submit" value="Post Message">
+                      </form>
+
               				<div class="messages" >
               				 <h3> Posted messages</h3>
-              				 	<button class="refresh" id="refreshMes" onclick="javascript:loadMessages(); return false;">Click here to refresh! </button>
-
+              				 	<button class="refresh" id="refreshMes" onclick="javascript:displayOnUserWall(); return false;">Click here to refresh! </button>
+                        <p id = "feedbackBox"> </p>
               				 <p class="allMessages" id="messageWall"> </p>
               			</div>
                   </div>
