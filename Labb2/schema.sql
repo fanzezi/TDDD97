@@ -1,0 +1,2 @@
+/* contain the SQL script used to initialize the databas
+*/
