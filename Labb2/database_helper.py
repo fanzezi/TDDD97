@@ -16,16 +16,31 @@ def get_db():
 #get email from token
 def tokenToEmail(token):
     c = get_db()
-    result = c.execute('SELECT email FROM loggedInUser WHERE token = ?', (token,))
-    row = result.fetchone()
-    return row[0]
+    c.execute('SELECT email FROM loggedInUser WHERE token = ?', [token])
+    rows = c.fetchone()
+    return rows[0]
 
 # get user
-def copyUser(email):
+def get_user(email):
     c = get_db()
-    result = c.execute('SELECT * FROM users WHERE email = ?', (email,))
-    user = result.fetchall()
+    cursor = c.execute('SELECT * FROM user WHERE email = ?', [email])
+    user = cursor.fetchall()
     return user
+
+def get_user_data(email):
+    c = get_db()
+    c.execute('SELECT * FROM user WHERE email = ?', [email])
+    data = c.fetchone()
+    return data
+
+def get_user_messages(email):
+    c = get_db()
+    c.execute('SELECT content,fromEmail FROM messages WHERE toEmail = ?', [email])
+    data = c.fetchall()
+    result = []
+    for i in range(len(data)):
+        result.append({'content': data[i][0], 'fromEmail': data[i][1]})
+    return result
 
 # find user
 def find_user(email, password):
@@ -36,30 +51,26 @@ def find_user(email, password):
     else:
         return False
 
-def create_post():
-    #do stuff
-    return ""
-
-def store_message():
-    #do stuff
-    return ""
-
-def remove_user():
-    # do stuff
-    return ""
-etattr(g, 'db', None)
-    if db is None:
-        db = g.db = connect_db()
-    return db
-
-def find_user(email, password):
-    db = get_db()
-    user = (email, password)
-    if user:
+def remove_user(token):
+    c = get_db()
+    try:
+        c.execute('DELETE FROM loggedInUser WHERE token = ?', [token])
+        c.commit()
         return True
-    else:
+    except:
         return False
 
-def create_post():
 
-def remove_user():
+def create_post(toEmail, fromEmail, message):
+    #do stuff
+    try:
+        c = get_db()
+        c.execute('INSERT INTO messages (toEmail, fromEmail, message) VALUES (?,?,?)', [toEmail, fromEmail, message])
+        c.commit()
+        return True
+    except:
+        return False
+
+
+def colse():
+    get_db().close()
