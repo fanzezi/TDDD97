@@ -2,14 +2,6 @@
 import sqlite3
 from flask import g
 
-def connect_db():
-    return sqlite3.connect("database.db")
-
-def get_db():
-    db = g# find_user(), remove_user(), create_post()
-import sqlite3
-from flask import g
-
 #connect to database
 def connect_db():
     return sqlite3.connect("database.db")
