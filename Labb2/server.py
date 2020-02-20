@@ -4,11 +4,13 @@ import json
 
 app = Flask(__name__)
 
+app.debug = True
+
 # File shall contain all the server side remote procedures
 #implemented using Python and Flask
 # signup singin
 
-@app.route("/sign-in", methods=['GET', 'POST'])
+@app.route("/sign-in", methods=['POST'])
 def sign_in():
     email = request.json['email']
     password = request.json['password']
@@ -38,13 +40,26 @@ def sign_up():
     country = request.json['country']
 
     # if somethings missing:
-    # return json.dumps({'success': False, 'message': "Form data missing or incorrect type."})
-    # return json.dumps({'success': False, 'message': "User already exists"})
-    return json.dumps({'success': True, 'message': "Successfully created a new user."})
+    if email != None and password !=  None and firstname != None and familyname != None and gender != None and city != None and country != None:
+        if len(password) < 4:
+            return json.dumps({'success': False, 'message': "Password must be at least 4 characters long"})
+
+        user = database_helper.register(email, password, firstname, familyname, gender, city, country)
+
+        if not user:
+            return json.dumps({'success': False, 'message': "User already exists"})
+
+        return json.dumps({'success': True, 'message': "Successfully created a new user."})
+
+    else:
+        return json.dumps({'success': False, 'message': "Form data missing or incorrect type."})
+
+
 
 @app.route("/sign-out", methods=['POST'])
 def sign_out():
     token = request.json['token']
+    # token = request.headers['Authorization']
     #if user is not signed in
     if database_helper.remove_user(token):
         #sign out user
@@ -64,7 +79,7 @@ def change_password():
 
     #if password length is less than 4 characters
     if len(newPassword)< 4:
-        return json.dumps({'success': False, 'message': "Password must be at least 3 characters long"})
+        return json.dumps({'success': False, 'message': "Password must be at least 4 characters long"})
 
     #get email from token
     email = database_helper.tokenToEmail(token)

@@ -20,26 +20,36 @@ def tokenToEmail(token):
     rows = c.fetchone()
     return rows[0]
 
+def register(email, password, firstname, familyname, gender, city, country):
+    c = get_db()
+
+    try:
+        c.execute('INSERT INTO users VALUES (?,?,?,?,?,?,?)', [email, password, firstname, familyname, gender, city, country])
+        c.commit()
+        return True
+    except:
+        return False
+
 # get user
 def get_user(email):
     c = get_db()
-    cursor = c.execute('SELECT * FROM user WHERE email = ?', [email])
+    cursor = c.execute('SELECT * FROM users WHERE email = ?', [email])
     user = cursor.fetchall()
     return user
 
 def get_user_data(email):
     c = get_db()
-    c.execute('SELECT * FROM user WHERE email = ?', [email])
+    c.execute('SELECT * FROM users WHERE email = ?', [email])
     data = c.fetchone()
     return data
 
 def get_user_messages(email):
     c = get_db()
-    c.execute('SELECT content,fromEmail FROM messages WHERE toEmail = ?', [email])
+    c.execute('SELECT message,fromEmail FROM messages WHERE toEmail = ?', [email])
     data = c.fetchall()
     result = []
     for i in range(len(data)):
-        result.append({'content': data[i][0], 'fromEmail': data[i][1]})
+        result.append({'message': data[i][0], 'fromEmail': data[i][1]})
     return result
 
 # find user
