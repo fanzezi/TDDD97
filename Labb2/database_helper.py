@@ -1,6 +1,7 @@
 # find_user(), remove_user(), create_post()
 import sqlite3
 from flask import g
+from random import randint
 
 #connect to database
 def connect_db():
@@ -11,7 +12,13 @@ def get_db():
     db = getattr(g, 'db', None)
     if db is None:
         db = g.db = connect_db()
-    return db
+    return
+
+def disconnect_db():
+    db = getattr(g, 'db', None)
+    if db is not None:
+        g.db.close()
+        g.db = None
 
 #get email from token
 def tokenToEmail(token):
@@ -24,7 +31,7 @@ def register(email, password, firstname, familyname, gender, city, country):
     c = get_db()
 
     try:
-        c.execute('INSERT INTO users VALUES (?,?,?,?,?,?,?)', [email, password, firstname, familyname, gender, city, country])
+        c.execute('INSERT INTO users (email, password, firstname, lastname, gender, city, country) VALUES (?,?,?,?,?,?,?)', [email, password, firstname, familyname, gender, city, country])
         c.commit()
         return True
     except:
@@ -35,7 +42,18 @@ def get_user(email):
     c = get_db()
     cursor = c.execute('SELECT * FROM users WHERE email = ?', [email])
     user = cursor.fetchall()
-    return user
+    cursor.close()
+    result = []
+    for i in range(len(user)):
+        result.append({'email': rows[i][0]})
+    return result
+
+def generate_token():
+    letters = "abcdefghiklmnopqrstuvwwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+    token = ""
+    for i in range (0,36):
+        token += letters[randint(0,len(letters) -1)]
+    return token
 
 def get_user_data(email):
     c = get_db()

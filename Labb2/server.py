@@ -17,12 +17,12 @@ def sign_in():
 
     #if user exists
     if database_helper.find_user(email,password):
-        token = generate_token()
+        token = database_helper.generate_token()
         #save token
-        #if :#token
-        return json.dumps({'success': True, 'message': "Successfully signed in", 'data': token})
-        #else:
-        #    return json.dumps({'success': False, 'message': "Sign in failed", 'data':"" })
+        if token:
+            return json.dumps({'success': True, 'message': "Successfully signed in", 'data': token})
+        else:
+            return json.dumps({'success': False, 'message': "Sign in failed"})
     else:
         return json.dumps({'success': False, 'message': "Wrong username or password!"})
 
@@ -39,27 +39,32 @@ def sign_up():
     city = request.json['city']
     country = request.json['country']
 
-    # if somethings missing:
-    if email != None and password !=  None and firstname != None and familyname != None and gender != None and city != None and country != None:
-        if len(password) < 4:
-            return json.dumps({'success': False, 'message': "Password must be at least 4 characters long"})
+    if (len(email) == 0 or
+        len(password) ==  0 or
+        len(firstname) == 0 or
+        len(familyname) == 0 or
+        len(gender) == 0 or
+        len(city) == 0 or
+        len(country) == 0):
 
-        user = database_helper.register(email, password, firstname, familyname, gender, city, country)
-
-        if not user:
-            return json.dumps({'success': False, 'message': "User already exists"})
-
-        return json.dumps({'success': True, 'message': "Successfully created a new user."})
-
-    else:
         return json.dumps({'success': False, 'message': "Form data missing or incorrect type."})
+
+    if len(password) < 4:
+        return json.dumps({'success': False, 'message': "Password must be at least 4 characters long"})
+
+    user = database_helper.register(email, password, firstname, familyname, gender, city, country)
+
+    if user is not False:
+        return json.dumps({'success': True, 'message': "Successfully created a new user."})
+    else:
+        return json.dumps({'success': False, 'message': "User already exists"})
 
 
 
 @app.route("/sign-out", methods=['POST'])
 def sign_out():
-    token = request.json['token']
-    # token = request.headers['Authorization']
+    #token = request.json['token']
+    token = request.headers['Authorization']
     #if user is not signed in
     if database_helper.remove_user(token):
         #sign out user
@@ -69,7 +74,8 @@ def sign_out():
 
 @app.route("/change-password", methods=['POST'])
 def change_password():
-    token = request.json['token']
+    #token = request.json['token']
+    token = request.headers['Authorization']
     oldPassword = request.json['oldPassword']
     newPassword = request.json['newPassword']
 
@@ -96,7 +102,8 @@ def change_password():
 
 @app.route("/get-user-data-by-token", methods=['GET'])
 def get_user_data_by_token():
-    token = request.json['token']
+    token = request.headers['Authorization']
+    #token = request.json['token']
     email = database_helper.tokenToEmail(token)
     user_data = database_helper.get_user_data(email)
 
@@ -114,7 +121,8 @@ def get_user_data_by_token():
 
 @app.route("/get-user-data-by-email", methods=['GET'])
 def get_user_data_by_email():
-    token = request.json['token']
+    #token = request.json['token']
+    token = request.headers['Authorization']
     email = request.json['email']
     user = database_helper.get_user_data(email)
 
@@ -137,7 +145,8 @@ def get_user_data_by_email():
 
 @app.route("/get-user-messages-by-token", methods=['GET'])
 def get_user_messages_by_token():
-    token = request.json['token']
+    #token = request.json['token']
+    token = request.headers['Authorization']
     email = database_helper.tokenToEmail(token)
     user_messages = database_helper.get_user_messages(email)
 
@@ -146,7 +155,8 @@ def get_user_messages_by_token():
 
 @app.route("/get-user-messages-by-email", methods=['GET'])
 def get_user_messages_by_email():
-    token = request.json['token']
+    #token = request.json['token']
+    token = request.headers['Authorization']
     email = request.json['email']
 
     #get user
@@ -165,7 +175,8 @@ def get_user_messages_by_email():
 #post message
 @app.route("/post-message", methods=['POST'])
 def post_message():
-    token = request.json['token']
+    #token = request.json['token']
+    token = request.headers['Authorization']
     message = request.json['message']
     toEmail = request.json['email']
 
