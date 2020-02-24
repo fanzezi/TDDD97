@@ -1,28 +1,23 @@
-/* contain the SQL script used to initialize the databas
-*/
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS loggedInUser;
-DROP TABLE IF EXISTS messages;
-
-CREATE TABLE users (
-  email varchar(50) NOT NULL,
-  password varchar(50) NOT NULL,
-  firstname varchar(50) NOT NULL,
-  familyname varchar(50) NOT NULL,
-  gender varchar(50) NOT NULL,
-  city varchar(50) NOT NULL,
-  country varchar(50) NOT NULL,
-  PRIMARY KEY (email)
+CREATE TABLE [users](
+  [email] VARCHAR(50),
+  [password] VARCHAR(30),
+  [firstname] VARCHAR(50),
+  [familyname] VARCHAR(50),
+  [gender] VARCHAR(6),
+  [city] VARCHAR(50),
+  [country] VARCHAR(50),
+  PRIMARY KEY(email)
 );
 
-CREATE TABLE loggedInUser(
-  email varchar(50) NOT NULL,
-  token varchar(50),
-  PRIMARY KEY (email)
+CREATE TABLE [loggedInUsers](
+  [email] VARCHAR(50),
+  [token] VARCHAR(30),
+  PRIMARY KEY(email)
 );
 
-CREATE TABLE messages(
-  toEmail varchar(50) NOT NULL,
-  fromEmail varchar(50) NOT NULL,
-  message varchar(255)
+CREATE TABLE [messages](
+  [messageId] INTEGER PRIMARY KEY autoincrement,
+  [fromEmail] VARCHAR(50),
+  [message] VARCHAR(250),
+  [toEmail] VARCHAR(50)
 );

@@ -1,104 +1,204 @@
-# find_user(), remove_user(), create_post()
 import sqlite3
 from flask import g
+import os
+import random
 from random import randint
+import string
 
-#connect to database
-def connect_db():
-    return sqlite3.connect("database.db")
+DATABASE = "database.db"
 
-#get database
 def get_db():
-    db = getattr(g, 'db', None)
+    db = getattr(g, '_database', None)
     if db is None:
-        db = g.db = connect_db()
-    return
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
+
+def init_db():
+    with app.app_context():
+        db = get_db()
+        with app.open_resource('schema.sql', mode='r') as f:
+            db.cursor().executescript(f.read())
+        db.commit()
 
 def disconnect_db():
     db = getattr(g, 'db', None)
     if db is not None:
         g.db.close()
-        g.db = None
 
-#get email from token
-def tokenToEmail(token):
-    c = get_db()
-    c.execute('SELECT email FROM loggedInUser WHERE token = ?', [token])
-    rows = c.fetchone()
-    return rows[0]
-
-def register(email, password, firstname, familyname, gender, city, country):
-    c = get_db()
-
-    try:
-        c.execute('INSERT INTO users (email, password, firstname, lastname, gender, city, country) VALUES (?,?,?,?,?,?,?)', [email, password, firstname, familyname, gender, city, country])
-        c.commit()
-        return True
-    except:
-        return False
-
-# get user
-def get_user(email):
-    c = get_db()
-    cursor = c.execute('SELECT * FROM users WHERE email = ?', [email])
-    user = cursor.fetchall()
-    cursor.close()
-    result = []
-    for i in range(len(user)):
-        result.append({'email': rows[i][0]})
-    return result
-
+# sign in -----------------------------------------------------
 def generate_token():
-    letters = "abcdefghiklmnopqrstuvwwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+    letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     token = ""
     for i in range (0,36):
         token += letters[randint(0,len(letters) -1)]
     return token
 
-def get_user_data(email):
+def user_exist(email):
     c = get_db()
-    c.execute('SELECT * FROM users WHERE email = ?', [email])
-    data = c.fetchone()
-    return data
-
-def get_user_messages(email):
-    c = get_db()
-    c.execute('SELECT message,fromEmail FROM messages WHERE toEmail = ?', [email])
-    data = c.fetchall()
-    result = []
-    for i in range(len(data)):
-        result.append({'message': data[i][0], 'fromEmail': data[i][1]})
-    return result
-
-# find user
-def find_user(email, password):
-    db = get_db()
-    user = (email, password)
+    cursor = c.execute('SELECT email FROM users WHERE email = ?', [email])
+    user = cursor.fetchone()
+    cursor.close()
     if user:
         return True
     else:
         return False
 
+def get_user(email):
+    c = get_db()
+    try:
+        cursor = c.execute('SELECT * FROM users WHERE email = ?', [email])
+        rows = cursor.fetchall()[0]
+        cursor.close()
+        return {'email' : rows[0],
+                'password' : rows[1]}
+    except:
+        return False
+
+def get_loggedInEmail(email):
+    c = get_db()
+    try:
+        cursor = c.execute('SELECT * FROM loggedInUsers WHERE email = ?', [email])
+        rows = cursor.fetchall()
+        cursor.close()
+        return {'email' : rows[0]}
+    except:
+        return False
+
+def sign_in(token,email):
+    c = get_db()
+    try:
+        result = get_loggedInEmail(email)
+        if result is False:
+            c.execute('INSERT INTO loggedInUsers VALUES(?,?)', [email ,token])
+            c.commit()
+            return True
+        else:
+            c.execute('UPDATE loggedInUsers SET token = ? WHERE email = ?', [token,email])
+            c.commit()
+            return True
+    except:
+        return False
+
+def allLoggedInUsers():
+    c = get_db()
+    cursor = c.execute('SELECT * FROM loggedInUsers')
+    rows = cursor.fetchall()
+    cursor.close()
+    result = []
+    for index in range(len(rows)):
+        result.append({'email' : rows[index][0],
+                        'token' : rows[index][1]})
+    return result
+
+# sign up ------------------------------------------------------------
+def register(email, password, firstname, familyname, gender, city, country):
+    c = get_db()
+    try:
+        c.execute('INSERT INTO users VALUES(?,?,?,?,?,?,?)', [email, password, firstname, familyname, gender, city, country])
+        c.commit()
+        return True
+    except:
+        return False
+
+# sign out -----------------------------------------------------------
 def remove_user(token):
     c = get_db()
     try:
-        c.execute('DELETE FROM loggedInUser WHERE token = ?', [token])
+        c.execute('DELETE FROM loggedInUsers WHERE token = ?', [token])
         c.commit()
         return True
     except:
         return False
 
-
-def create_post(toEmail, fromEmail, message):
-    #do stuff
+def tokenToEmail(token):
+    c = get_db()
     try:
-        c = get_db()
-        c.execute('INSERT INTO messages (toEmail, fromEmail, message) VALUES (?,?,?)', [toEmail, fromEmail, message])
+        cursor = c.execute('SELECT * FROM loggedInUsers WHERE token = ?', [token])
+        rows = cursor.fetchall()
+        cursor.close()
+        return {'email' : rows[0],
+                'token' : rows[1]}
+    except:
+        return False
+
+# change password ------------------------------------------------
+def change_password(token,newPassword,oldPassword):
+    c = get_db()
+    try:
+        email = tokenToEmail(token)
+        user = get_user(email['email'])
+
+        if oldPassword == user['password']:
+            c.execute('UPDATE users SET password = ? WHERE email =  ?', [newPassword,email['email']])
+            c.commit()
+            return True
+        else:
+            return False
+    except:
+        return False
+
+def get_user_data_by_email(email):
+    c = get_db()
+    cursor = c.execute('SELECT * FROM users WHERE email = ?', [email])
+    rows = cursor.fetchall()[0]
+    cursor.close()
+    return {'email' : rows[0],'firstname' : rows[2],
+            'familyname' : rows[3], 'gender' : rows[4],
+            'city' : rows[5],'country' : rows[6]}
+
+def get_user_messages_by_token(email):
+    print(email)
+    c = get_db()
+    cursor = c.execute('SELECT * FROM messages WHERE fromEmail = ?', [email])
+    rows = cursor.fetchall()
+    cursor.close()
+    result = []
+    for index in range(len(rows)):
+        result.append({'fromEmail': rows[index][1],
+                        'message' : rows[index][2],
+                        'toEmail' : rows[index][3]})
+    return result
+
+def get_user_messages_by_email(email):
+    c = get_db()
+    cursor = c.execute('SELECT * FROM messages WHERE toEmail = ?', [email])
+    rows = cursor.fetchall()
+    cursor.close()
+    result = []
+    for index in range(len(rows)):
+        result.append({'fromEmail' : rows[index][1],
+                        'message' : rows[index][2],
+                        'toEmail' : rows[index][3]})
+    return result
+
+# def print_all_users():
+#     c = get_db()
+#     cursor = c.execute('SELECT * FROM users')
+#     rows = cursor.fetchall()
+#     cursor.close()
+#     result = []
+#     for index in range(len(rows)):
+#         result.append({'email' : rows[index][0],
+#                         'password' : rows[index][1]})
+#     return result
+
+def post_message(fromEmail, message, toEmail):
+    c = get_db()
+    try:
+        c.execute('INSERT INTO messages (fromEmail, message, toEmail) VALUES(?,?,?)', [fromEmail, message, toEmail])
         c.commit()
         return True
     except:
         return False
 
-
-def colse():
-    get_db().close()
+def print_all_messages():
+    c = get_db()
+    cursor = c.execute('SELECT * FROM messages')
+    rows = cursor.fetchall()
+    cursor.close()
+    result = []
+    for index in range(len(rows)):
+        result.append({'fromEmail' : rows[index][1],
+                        'messages' : rows[index][2],
+                        'toEmail' : rows[index][3] })
+    return result
