@@ -69,20 +69,20 @@ def sign_up():
         return jsonify({'success': False, 'message': "User already exists"})
 
 #sign out current user
-@app.route('/sign-out', methods = ['POST'])
+@app.route('/sign-out', methods = ['DELETE'])
 def sign_out():
     token = request.headers["Authorization"]
     data = database_helper.tokenToEmail(token)
     print(data)
-    if data is not False:
-        if data['token'] == token:
-            database_helper.remove_user(token)
-            jsonify(database_helper.allLoggedInUsers())
-            return jsonify({'success': True, 'message': "Successfully signed out"})
-        else :
-            return jsonify({'success': False, 'message': "You are not signed in"})
+    #if data is not False:
+    if data['token'] == token:
+        database_helper.remove_user(token)
+        jsonify(database_helper.allLoggedInUsers())
+        return jsonify({'success': True, 'message': "Successfully signed out"})
     else:
-        return jsonify({'success': False, 'message': "Sign out failed"})
+        return jsonify({'success': False, 'message': "You are not signed in"})
+    #else:
+        #return jsonify({'success': False, 'message': "Sign out failed"})
 
 # change password
 @app.route('/change-password',methods = ['PUT'])
@@ -95,7 +95,7 @@ def change_password():
     if result:
         return jsonify({'success': True, 'message': "Password changed"})
     else:
-        return jsonify({'success': False, 'message': "Wrong password"})
+        return jsonify({'success': False, 'message': "Wrong old password"})
 
 @app.route('/getdatatoken', methods = ['GET'])
 def get_user_data_by_token():

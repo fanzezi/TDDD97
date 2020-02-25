@@ -114,8 +114,10 @@ def tokenToEmail(token):
     c = get_db()
     try:
         cursor = c.execute('SELECT * FROM loggedInUsers WHERE token = ?', [token])
-        rows = cursor.fetchall()
+        rows = cursor.fetchall()[0]
         cursor.close()
+        print(rows[0])
+        print(rows[1])
         return {'email' : rows[0],
                 'token' : rows[1]}
     except:
