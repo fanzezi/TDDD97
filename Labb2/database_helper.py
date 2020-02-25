@@ -26,6 +26,7 @@ def disconnect_db():
         g.db.close()
 
 # sign in -----------------------------------------------------
+# generate random token
 def generate_token():
     letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     token = ""
@@ -33,6 +34,7 @@ def generate_token():
         token += letters[randint(0,len(letters) -1)]
     return token
 
+# if email is in user
 def user_exist(email):
     c = get_db()
     cursor = c.execute('SELECT email FROM users WHERE email = ?', [email])
@@ -43,6 +45,7 @@ def user_exist(email):
     else:
         return False
 
+# get user email
 def get_user(email):
     c = get_db()
     try:
@@ -54,6 +57,7 @@ def get_user(email):
     except:
         return False
 
+# get email from loggedInUsers
 def get_loggedInEmail(email):
     c = get_db()
     try:
@@ -64,6 +68,7 @@ def get_loggedInEmail(email):
     except:
         return False
 
+#insert user into loggedInUsers
 def sign_in(token,email):
     c = get_db()
     try:
@@ -79,6 +84,7 @@ def sign_in(token,email):
     except:
         return False
 
+# print all logged in users
 def allLoggedInUsers():
     c = get_db()
     cursor = c.execute('SELECT * FROM loggedInUsers')
@@ -91,6 +97,7 @@ def allLoggedInUsers():
     return result
 
 # sign up ------------------------------------------------------------
+# insert new user into users
 def register(email, password, firstname, familyname, gender, city, country):
     c = get_db()
     try:
@@ -101,6 +108,7 @@ def register(email, password, firstname, familyname, gender, city, country):
         return False
 
 # sign out -----------------------------------------------------------
+# delete user from loggedInUsers
 def remove_user(token):
     c = get_db()
     try:
@@ -110,6 +118,7 @@ def remove_user(token):
     except:
         return False
 
+#get loggedInUsers from token
 def tokenToEmail(token):
     c = get_db()
     try:
@@ -139,6 +148,7 @@ def change_password(token,newPassword,oldPassword):
     except:
         return False
 
+#get user data from email in users
 def get_user_data_by_email(email):
     c = get_db()
     cursor = c.execute('SELECT * FROM users WHERE email = ?', [email])
@@ -148,6 +158,7 @@ def get_user_data_by_email(email):
             'familyname' : rows[3], 'gender' : rows[4],
             'city' : rows[5],'country' : rows[6]}
 
+# get user messages from token
 def get_user_messages_by_token(email):
     print(email)
     c = get_db()
@@ -161,6 +172,7 @@ def get_user_messages_by_token(email):
                         'toEmail' : rows[index][3]})
     return result
 
+# get user messages from email
 def get_user_messages_by_email(email):
     c = get_db()
     cursor = c.execute('SELECT * FROM messages WHERE toEmail = ?', [email])
@@ -184,6 +196,7 @@ def get_user_messages_by_email(email):
 #                         'password' : rows[index][1]})
 #     return result
 
+# insert new message into messages
 def post_message(fromEmail, message, toEmail):
     c = get_db()
     try:
@@ -193,9 +206,10 @@ def post_message(fromEmail, message, toEmail):
     except:
         return False
 
-def print_all_messages():
+# print all messages on signed in users wall
+def print_all_messages(toEmail):
     c = get_db()
-    cursor = c.execute('SELECT * FROM messages')
+    cursor = c.execute('SELECT * FROM messages WHERE toEmail = ?', [toEmail])
     rows = cursor.fetchall()
     cursor.close()
     result = []
@@ -203,4 +217,5 @@ def print_all_messages():
         result.append({'fromEmail' : rows[index][1],
                         'messages' : rows[index][2],
                         'toEmail' : rows[index][3] })
+        print(rows[index][3])
     return result
