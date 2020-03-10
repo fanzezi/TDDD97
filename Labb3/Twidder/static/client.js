@@ -17,7 +17,7 @@ window.onload = function(){
   profileview = document.getElementById("profileview");
   welcomeview = document.getElementById("welcomeview");
   displayView(welcomeview);
-  connect_socket();
+  //connect_socket();
 
   // if(token !=  null){
   //   connect_socket();
@@ -30,7 +30,7 @@ window.onload = function(){
   // }
 
 };
-
+/*
 function connect_socket(){
   //var socket = new WebSocket("ws://" + document.domain + ':' + port + "/api");
   // if(window.location.protocol == "https:"){
@@ -67,7 +67,7 @@ function connect_socket(){
     console.log("Error in Websocket");
   };
 }
-
+*/
 function activeTab(id){
   var homeTab = document.getElementById("HomeTab");
   var browseTab = document.getElementById("BrowseTab");
@@ -126,6 +126,7 @@ function signIn(){
           var response = JSON.parse(req.responseText);
           if (response.success) {
             localStorage.setItem("token", response.data);
+            localStorage.setItem("email", email);
             //userToken = response.data;
             //window.onload();
             displayView(profileview);
@@ -227,52 +228,49 @@ function pswChange(){
   var psw_match = document.getElementById("psw_match");
   var message = document.getElementById("passMessage");
 
-  try {
-    var sendData = {'oldPassword': oldPsw, 'newPassword': changePsw};
+
+  var sendData = {'oldPassword': oldPsw, 'newPassword': pswRptnew};
 
     //Reset hidden text
-      psw_len.style.display = "none";
-      psw_match.style.display = "none";
-    //Password validation
-      if(changePsw.length < passWrdLen){
-        psw_len.style.display = "block";
-      }
-       else if(changePsw != pswRptnew){
-         psw_match.style.display = "block";
-       }
-      else if(oldPsw != psw){
-        message.innerHTML = "Old password not correct!";
-      }
-      else{
+  psw_len.style.display = "none";
+  psw_match.style.display = "none";
+ //Password validation
+  if(changePsw.length < passWrdLen){
+    psw_len.style.display = "block";
+  }
+  else if(changePsw != pswRptnew){
+    psw_match.style.display = "block";
+  }
+  else if(oldPsw != psw){
+    message.innerHTML = "Old password not correct!";
+  }
+  else{
 
-        var req = new XMLHttpRequest();
-        req.onreadystatechange = function(){
+    var req = new XMLHttpRequest();
+    req.onreadystatechange = function(){
 
-          if (this.readyState == 4){
-            if(this.status == 200){
-              var response = JSON.parse(req.responseText);
-              message.innerHTML = response.message;
-              if(response.success){
-                message.innerHTML = "Password changed";
+    if (this.readyState == 4){
+      if(this.status == 200){
+        var response = JSON.parse(req.responseText);
+        //message.innerHTML = response.message;
+        if(response.success){
+          message.innerHTML = "Password changed";
 
-              } else{
-                message.innerHTML = response.message;
+        } else{
+          message.innerHTML = response.message;
 
-              }
-            }
-          }
         }
-        req.open("PUT", "/change-password", true);
-        req.setRequestHeader("Content-type", "application/json");
-        req.setRequestHeader("Authorization", token);
-        req.send(JSON.stringify(sendData));
+      }
+    }
+  }
+  req.open("PUT", "/change-password", true);
+  req.setRequestHeader("Content-type", "application/json");
+  req.setRequestHeader("Authorization", token);
+  req.send(JSON.stringify(sendData));
   }
 
       // serverstub.changePassword(userToken, oldPsw, changePsw);
       // message.innerHTML = "password changed";
-    } catch(e) {
-      console.error(e);
-    }
 }
 
 function getUserData(){
@@ -308,21 +306,31 @@ function getUserData(){
   req.send();
 }
 
+var loggedInUsers = {}
 //postmessage
-function postWall(toEmail){
+function postWall(){
 
   var token = localStorage.getItem("token");
   var newPost = document.getElementById("postBox").value;
   var messWall = document.getElementById("pMess");
+  var toEmail = localStorage.getItem("email");
 
-  try {
     var postMessage = {"message": newPost, "email": toEmail};
+    console.log(postMessage)
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
       if(this.readyState == 4){
         if(this.status == 200){
           var response = JSON.parse(req.responseText);
-          messWall.innerHTML = response.message;
+          if(response.success){
+            console.log(response[0])
+          }else {
+            console.log(response)
+          }
+
+          // postMessage.innerHTML = response.message;
+          // console.log(response.message);
+          // displayOnUserWall();
         }
       }
     }
@@ -330,9 +338,7 @@ function postWall(toEmail){
     req.setRequestHeader("Content-Type", "application/json");
     req.setRequestHeader("Authorization", token);
     req.send(JSON.stringify(postMessage));
-  } catch(e){
-    console.error(e);
-  }
+
   //Get user info
   // var getUser = serverstub.getUserDataByToken(userToken);
   // var userData = getUser.data;
@@ -352,11 +358,14 @@ function displayWall(){
         if(this.status == 200){
           var response = JSON.parse(req.responseText);
           if(response.success){
+
             var messages = response.data;
+
             document.getElementById("wall").innerHTML = null;
             for(i = 0; i < messages.length; i++){
               document.getElementById("wall").innerHTML +=
-              "<p>"+ "Posted by " + messages[i].writer + "<br>" + messages[i].content + "<br></p>";
+              "<p>"+ "Posted by " + messages[i].fromEmail + "<br>" + messages[i].message + "<br></p>";
+
             }
           } else {
             document.getElementById("wall").innerHTML = null;
