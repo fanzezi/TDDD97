@@ -1,13 +1,14 @@
 import sqlite3
 from flask import Flask, request, jsonify, send_from_directory, render_template
-import Twidder.database_helper
+#import Twidder.database_helper
+import database_helper
 import json
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
-from Twidder import database_helper
+#from Twidder import database_helper
 
-#app = Flask(__name__)
 app = Flask(__name__)
+#app = Flask('Twidder')
 app.debug = True
 active_sockets = dict()
 
@@ -21,7 +22,7 @@ def root():
     #return app.send_static_file('client.html')
     return render_template('client.html')
 
-@app.route('/api')
+'''@app.route('/api')
 def api():
     if request.environ.get('wsgi.webscoket'):
         ws = request.environ['wsgi.websocket']
@@ -47,7 +48,7 @@ def api():
                 ws.close()
                 return ''
     return ''
-
+'''
 # sign in existing user
 @app.route('/sign-in',methods = ['POST'])
 def sign_in():
@@ -215,8 +216,10 @@ def get_user_messages_by_email():
 @app.route('/post-message',methods = ['POST'])
 def post_message():
     token = request.headers["Authorization"]
-    message = request.json['message']
-    toEmail = request.json['email']
+
+    message = request.json["message"]
+    print('message', message)
+    toEmail = request.json["email"]
     fromEmail = database_helper.tokenToEmail(token)
 
     #if email sender is true
@@ -229,7 +232,7 @@ def post_message():
     else: #if email sender is false
         return jsonify({'success': False, 'message': "No such user"})
 
-# if __name__=='__main__':
-#     #app.run()
-#     http_server = WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
-#     http_server.serve_forever()
+if __name__=='__main__':
+     app.run()
+     http_server = WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
+     http_server.serve_forever()
