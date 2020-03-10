@@ -14,16 +14,20 @@ displayView = function(view){
 window.onload = function(){
 //code that is executed as the page is loaded.
   var token = localStorage.getItem("token");
-  if(token !=  null){
-    connect_socket();
-    profileview = document.getElementById("profileview");
-    displayView(profileview);
+  profileview = document.getElementById("profileview");
+  welcomeview = document.getElementById("welcomeview");
+  displayView(welcomeview);
+  connect_socket();
 
-  } else {
-    welcomeview = document.getElementById("welcomeview");
-    displayView(welcomeview);
-
-  }
+  // if(token !=  null){
+  //   connect_socket();
+  //   displayView(profileview);
+  //
+  // } else {
+  //
+  //   displayView(welcomeview);
+  //
+  // }
 
 };
 
@@ -35,7 +39,7 @@ function connect_socket(){
   //   var ws_scheme ="ws://";
   // }
   var host = location.host;
-  var socket = new WebSocket("ws://"+host+"/api");
+  var socket = new WebSocket("ws://127.0.0.1:5000/api");
   socket.onopen = function(){
     var token = {"token": localStorage.getItem("token")};
     console.log(token["token"]);
@@ -47,7 +51,8 @@ function connect_socket(){
       //var data = token.data;
       localStorage.removeItem("token");
       console.log(token.data);
-      displayView(welcomeview);
+      window.onload();
+      //displayView(welcomeview);
       return
     }else {
       console.log("Successfully signed in");
@@ -122,8 +127,11 @@ function signIn(){
           if (response.success) {
             localStorage.setItem("token", response.data);
             //userToken = response.data;
+            //window.onload();
             displayView(profileview);
             getUserData();
+
+
 
           } else {
             logInMessage.innerHTML = response.message;
@@ -165,7 +173,6 @@ function signUp(){
   var psw_len = document.getElementById("psw_len");
   var psw_match = document.getElementById("psw_match");
 
-  try{
     var newUser = {
       "email":emailSignUp,
       "password":password,
@@ -208,9 +215,6 @@ function signUp(){
     // var newUserProfile = serverstub.signUp(newUser);
     // var message = document.getElementById("message");
     // message.innerHTML = newUserProfile.message;
-  } catch(e) {
-    console.error(e);
-  }
 }
 
 function pswChange(){
@@ -517,7 +521,7 @@ function postOnUserWall(){
   // newPost.innerHTML = postMess.message;
   // displayOnUserWall();
   }
-}
+
 
 //getUserMessagesByEmail
 function displayOnUserWall(){
@@ -576,6 +580,7 @@ function signOut(){
           if (response.success){
             //userToken = null;
             localStorage.removeItem("token");
+            welcomeview = document.getElementById("welcomeview");
             displayView(welcomeview);
           }
         }
