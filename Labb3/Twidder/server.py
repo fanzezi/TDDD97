@@ -166,7 +166,7 @@ def get_user_data_by_token():
         return jsonify({'success': False, 'message': "No such user"})
 
 
-@app.route('/getdataemail', methods = ['GET'])
+@app.route('/getdataemail', methods = ['POST'])
 def get_user_data_by_email():
     token = request.headers["Authorization"]
     email = request.json['email']

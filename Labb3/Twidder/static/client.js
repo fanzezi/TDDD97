@@ -5,6 +5,7 @@ var passWrdLen = 3;
 var userToken = "";
 var password = "";
 var port = "5000";
+var otherEmail = "";
 
 displayView = function(view){
 // the code required to display a view
@@ -228,8 +229,7 @@ function pswChange(){
   var psw_match = document.getElementById("psw_match");
   var message = document.getElementById("passMessage");
 
-
-  var sendData = {'oldPassword': oldPsw, 'newPassword': pswRptnew};
+  var sendData = {'oldPassword': oldPsw, 'newPassword': changePsw};
 
     //Reset hidden text
   psw_len.style.display = "none";
@@ -241,27 +241,28 @@ function pswChange(){
   else if(changePsw != pswRptnew){
     psw_match.style.display = "block";
   }
-  else if(oldPsw != psw){
+  else if(oldPsw != password){
     message.innerHTML = "Old password not correct!";
   }
   else{
 
     var req = new XMLHttpRequest();
     req.onreadystatechange = function(){
-
-    if (this.readyState == 4){
-      if(this.status == 200){
+    if (this.readyState == 4 && this.status == 200){
         var response = JSON.parse(req.responseText);
-        //message.innerHTML = response.message;
-        if(response.success){
-          message.innerHTML = "Password changed";
-
-        } else{
-          message.innerHTML = response.message;
-
-        }
-      }
-    }
+        message.innerHTML = response.message;
+    //     if(response.success){
+    //       console.log(response);
+    //       message.innerHTML = response.message;
+    //
+    //     } else{
+    //       console.log(response);
+    //       message.innerHTML = response.message;
+    //
+    //     }
+    // } else {
+    //   message.innerHTML = message;
+   }
   }
   req.open("PUT", "/change-password", true);
   req.setRequestHeader("Content-type", "application/json");
@@ -298,8 +299,6 @@ function getUserData(){
     }
 
   }
-
-  console.log("Hej")
   req.open("GET", "/getdatatoken", true);
   req.setRequestHeader("Authorization", token);
   req.setRequestHeader("Content-Type", "application/json");
@@ -409,12 +408,14 @@ function loadMessages(){
             var messages = response.data;
             document.getElementById("messageWall").innerHTML = null;
             for(i = 0; i < messages.length; i++){
-                 document.getElementById("messageWall").innerHTML += "<p>" + "From " + messages[i].writer + "<br>" + messages[i].content + "<br></p>";
+                 document.getElementById("messageWall").innerHTML += "<p>" + "From " + messages[i].fromEmail + "<br>" + messages[i].message + "<br></p>";
                  //document.getElementById("messageWall").innerHTML += messages[i].content + "<br></p>" ;
+                 console.log(messages[i].fromEmail);
             }
 
           } else {
-            document.getElementById("messageWall").innerHTML = null;
+            console.log("Found no messages on this wall");
+            //document.getElementById("messageWall").innerHTML = null;
           }
         }
       }
@@ -425,7 +426,7 @@ function loadMessages(){
     req.send(JSON.stringify(user));
 
   } catch(e){
-    console.error(e);
+    console.error("Failed to send request");
   }
   // var getMessages = serverstub.getUserMessagesByEmail(userToken, email);
   // if (getMessages.success == true){
@@ -436,20 +437,18 @@ function loadMessages(){
   //     document.getElementById("messageWall").innerHTML += messages[i].content + "<br></p>" ;
 }
 
-var otherEmail;
-
 // getuserdatabyemail
 function browseUser(){
 
    var token = localStorage.getItem("token");
-   otherEmail = document.getElementById("browseuser").value;
+   var email = document.getElementById("browseuser").value;
    //var userInfo = serverstub.getUserDataByEmail(userToken, otherEmail);
    try {
-     var userEmail = {"email": otherEmail};
+     var userEmail = {"email": email};
+     console.log(userEmail)
      var req = new XMLHttpRequest();
      req.onreadystatechange = function() {
-       if(this.readyState == 4){
-         if(this.status == 200){
+       if(this.readyState == 4 && this.status == 200){
            var response = JSON.parse(req.responseText);
            if(response.success){
              var browseUserInfo = document.getElementById("browseUserInfo");
@@ -458,23 +457,26 @@ function browseUser(){
              browseUserInfo.style.display = "block";
              browseUserBlock.style.display = "none";
 
+             otherEmail = email;
              var userData = response.data;
-             document.getElementById("nameBr").innerHTML =   "Name:   " + userData.firstname + " " + userData.familyname;
-             document.getElementById("genderBr").innerHTML = "Gender: " + userData.gender;
-             document.getElementById("cityBr").innerHTML =   "City:   " + userData.city;
-             document.getElementById("countryBr").innerHTML ="Country: " + userData.country;
-             document.getElementById("emailBr").innerHTML =  "Email:  " + userData.email;
+             document.getElementById("nameBr").innerHTML =   "<p>" + "Name: " + userData.firstname + " " + userData.familyname + "<br>";
+             document.getElementById("genderBr").innerHTML = "Gender: " + userData.gender + "<br>";
+             document.getElementById("cityBr").innerHTML =   "City:   " + userData.city + "<br>";
+             document.getElementById("countryBr").innerHTML ="Country: " + userData.country + "<br>";
+             document.getElementById("emailBr").innerHTML =  "Email:  " + userData.email + "<br></p>";
              loadMessages();
-           } else {
+           } else{
              document.getElementById("errorSearch").innerHTML = response.message;
            }
-         }
+       } else {
+         document.getElementById("errorSearch").innerHTML = response.message;
        }
      }
-     req.open("GET", "/getdataemail", true);
+     req.open("POST", "/getdataemail", true);
      req.setRequestHeader("Content-Type", "application/json");
      req.setRequestHeader("Authorization", token);
      req.send(JSON.stringify(userEmail));
+
    } catch(e){
      console.error(e);
    }
@@ -489,12 +491,12 @@ function postOnUserWall(){
   //Get user info
   var token = localStorage.getItem("token");
   //otherEmail = document.getElementById("browseuser").value;
-
   var messWall = document.getElementById("feedbackBox");
   var newPost = document.getElementById("postBoxBrowse").value;
 
   try {
-    var postMess = {"message": newPost, "email": otherEmail};
+    var postMess = {"email": otherEmail, "message": newPost};
+    console.log(postMess)
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
       if(this.readyState == 4){
@@ -502,16 +504,16 @@ function postOnUserWall(){
           var response = JSON.parse(req.responseText);
           if(response.success){
             var userData = response.data;
-            if(userData.success){
-              newPost.innerHTML = response.message;
-              displayOnUserWall();
-            }
-
+            messWall.innerHTML = response.message;
+            console.log(response[0])
+            displayOnUserWall();
+          }else {
+            console.log(response)
           }
         }
       }
     }
-    req.open("GET", "/post-message-user", true);
+    req.open("POST", "/post-message", true);
     req.setRequestHeader("Content-Type", "application/json");
     req.setRequestHeader("Authorization", token);
     req.send(JSON.stringify(postMess));
@@ -536,9 +538,10 @@ function postOnUserWall(){
 function displayOnUserWall(){
   //otherEmail = document.getElementById("browseuser").value;
   var token = localStorage.getItem("token");
+  var email = document.getElementById("findUser").value;
 
   try{
-    var getMessages = {"email": otherEmail};
+    var getMessages = {"email": email};
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
       if(this.readyState == 4){
@@ -549,14 +552,14 @@ function displayOnUserWall(){
             document.getElementById("messageWall").innerHTML = null;
 
             for(i = 0; i < messages.length; i++){
-              document.getElementById("messageWall").innerHTML += "<p>" +"From: " + messages[i].writer + "<br>" + messages[i].content + "<br></p>";
+              document.getElementById("messageWall").innerHTML += "<p>" +"From: " + messages[i].fromEmail + "<br>" + messages[i].message + "<br>" + messages[i].toEmail + "<br></p>";
             }
 
           }
         }
       }
     }
-    req.open("GET", "/getusermessagesemail", true);
+    req.open("GET", "/getmessagesemail", true);
     req.setRequestHeader("Content-Type", "application/json");
     req.setRequestHeader("Authorization", token);
     req.send(JSON.stringify(getMessages));
