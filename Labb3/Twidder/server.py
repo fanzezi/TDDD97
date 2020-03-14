@@ -5,11 +5,12 @@ import database_helper
 import json
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
+from geventwebsocket import WebSocketError
 #from Twidder import database_helper
 
-app = Flask(__name__)
-#app = Flask('Twidder')
-app.debug = True
+#app = Flask(__name__)
+app = Flask('__name__')
+#app.debug = True
 active_sockets = dict()
 
 @app.teardown_request
@@ -22,9 +23,9 @@ def root():
     #return app.send_static_file('client.html')
     return render_template('client.html')
 
-'''@app.route('/api')
+@app.route('/api')
 def api():
-    if request.environ.get('wsgi.webscoket'):
+    if request.environ.get('wsgi.websocket'):
         ws = request.environ['wsgi.websocket']
         msg = ws.recieve()
         data = json.loads(msg)
@@ -35,20 +36,38 @@ def api():
         if not user_id:
             ws.send(json.dumps({"success": False, "message": "no such email"}))
 
+        try:
+            if data['email'] in active_sockets:
+                print(data['email'] + ' has a socket')
+                print('Socket saved with ' + data['email'])
+                active_sockets[user_id].close()
+                active_sockets.pop(user_id)
+            active_sockets[user_id] = ws
+            ws.send(json.dumps({"success": True, "msg":"Welcome homie"}))
 
-        if user_id in active_sockets:
-            active_sockets[user_id].close()
-            active_sockets.pop(user_id)
-        active_sockets[user_id] = ws
-        ws.send(json.dumps({"success": True, "message": "Welcome"}))
+            while True:
+                object = ws.receive()
+                if object == None:
+                    #active_sockets.pop(data['email'], None)
+                    ws.close
+                    return ''
 
-        while True:
-            object = ws.recieve()
-            if object == None:
-                ws.close()
-                return ''
+        except WebSocketError:
+            print('Web socket connection error')
+            sockets.pop(data['email'], None)
+        # if user_id in active_sockets:
+        #     active_sockets[user_id].close()
+        #     active_sockets.pop(user_id)
+        # active_sockets[user_id] = ws
+        # ws.send(json.dumps({"success": True, "message": "Welcome"}))
+        #
+        # while True:
+        #     object = ws.recieve()
+        #     if object == None:
+        #         ws.close()
+        #         return ''
     return ''
-'''
+
 # sign in existing user
 @app.route('/sign-in',methods = ['POST'])
 def sign_in():
@@ -121,7 +140,7 @@ def sign_up():
 def sign_out():
     token = request.headers["Authorization"]
     data = database_helper.tokenToEmail(token)
-    print(data)
+
     if data is not False:
         #if token is in data
         if data['token'] == token:
@@ -169,11 +188,12 @@ def get_user_data_by_token():
 @app.route('/getdataemail', methods = ['POST'])
 def get_user_data_by_email():
     token = request.headers["Authorization"]
-    email = request.json['email']
+    email = request.json['otherEmail']
     data = database_helper.tokenToEmail(token)
 
     # if email in data and token in data
-    if data['email'] == email and data['token'] == token:
+    #if data['email'] == email and data['token'] == token:
+    if data['token'] == token:
         #fetch user data by email
         result = database_helper.get_user_data_by_email(email)
         if result:
@@ -196,7 +216,7 @@ def get_user_messages_by_token():
     else: #if data is false
         return jsonify({'success': False, 'message': "No such user"})
 
-@app.route('/getmessagesemail',methods = ['GET'])
+@app.route('/getmessagesemail',methods = ['POST'])
 def get_user_messages_by_email():
     token = request.headers["Authorization"]
     toEmail = request.json['email']
@@ -218,7 +238,7 @@ def post_message():
     token = request.headers["Authorization"]
 
     message = request.json["message"]
-    print('message', message)
+    #print('message', message)
     toEmail = request.json["email"]
     fromEmail = database_helper.tokenToEmail(token)
 
@@ -233,6 +253,7 @@ def post_message():
         return jsonify({'success': False, 'message': "No such user"})
 
 if __name__=='__main__':
-     app.run()
+     #app.run(debug=True)
+     #app.debug = True
      http_server = WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
      http_server.serve_forever()

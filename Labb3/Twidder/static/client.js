@@ -2,10 +2,8 @@
 var welcomeview;
 var profileview;
 var passWrdLen = 3;
-var userToken = "";
 var password = "";
 var port = "5000";
-var otherEmail = "";
 
 displayView = function(view){
 // the code required to display a view
@@ -17,46 +15,44 @@ window.onload = function(){
   var token = localStorage.getItem("token");
   profileview = document.getElementById("profileview");
   welcomeview = document.getElementById("welcomeview");
-  displayView(welcomeview);
+
+  if (token){
+    connect_socket();
+    displayView(profileview);
+    getUserData();
+  }else{
+    displayView(welcomeview);
+  }
   //connect_socket();
 
-  // if(token !=  null){
-  //   connect_socket();
-  //   displayView(profileview);
-  //
-  // } else {
-  //
-  //   displayView(welcomeview);
-  //
-  // }
-
 };
-/*
+
 function connect_socket(){
-  //var socket = new WebSocket("ws://" + document.domain + ':' + port + "/api");
-  // if(window.location.protocol == "https:"){
-  //   var ws_scheme = "wss://";
-  // }else {
-  //   var ws_scheme ="ws://";
-  // }
-  var host = location.host;
-  var socket = new WebSocket("ws://127.0.0.1:5000/api");
+
+  var socket = new WebSocket("wss://" + document.domain + ':' + port + "/api");
+
   socket.onopen = function(){
-    var token = {"token": localStorage.getItem("token")};
-    console.log(token["token"]);
-    socket.send(JSON.stringify(token));
-  };
+    var data = {
+      'token': localStorage.getItem('token')
+      //'email': localStorage.getItem('email')
+    };
+    console.log(data["token"]);
+    socket.send(JSON.stringify(data));
+
+  }
+
   socket.onmessage = function(event){
-    var token = JSON.parse(event.data);
-    if(token.success == false){
-      //var data = token.data;
+    //window.alert("Connection websocket");
+    console.log(event.data);
+    var msg = JSON.parse(event.data);
+
+    if(msg.success == false){
       localStorage.removeItem("token");
-      console.log(token.data);
+      console.log(msg.data);
       window.onload();
-      //displayView(welcomeview);
       return
     }else {
-      console.log("Successfully signed in");
+      console.log("Successfully signed in")
     }
   };
 
@@ -64,11 +60,14 @@ function connect_socket(){
     console.log("Websocket closed");
   };
 
-  socket.onerror = function() {
-    console.log("Error in Websocket");
+  socket.onerror = function(){
+    console.log("Error in websocket");
   };
+
 }
-*/
+
+
+
 function activeTab(id){
   var homeTab = document.getElementById("HomeTab");
   var browseTab = document.getElementById("BrowseTab");
@@ -109,13 +108,12 @@ function activeTab(id){
   }
 }
 
-
+//-----------------WELCOME PAGE -----------------------
 // Sign in user
 function signIn(){
   var email = document.getElementById("email").value;
   password = document.getElementById("psw").value;
   var logInMessage = document.getElementById("logInMessage");
-  //var user = serverstub.signIn(username, psw);
 
   try {
     var user = {'email': email, 'password': password};
@@ -128,12 +126,10 @@ function signIn(){
           if (response.success) {
             localStorage.setItem("token", response.data);
             localStorage.setItem("email", email);
-            //userToken = response.data;
-            //window.onload();
+
+            connect_socket();
             displayView(profileview);
             getUserData();
-
-
 
           } else {
             logInMessage.innerHTML = response.message;
@@ -144,21 +140,13 @@ function signIn(){
     req.open("POST", "/sign-in", true);
     req.setRequestHeader("Content-type", "application/json");
     req.send(JSON.stringify(user));
+
   } catch(e){
     console.error(e);
   }
-  // if(user.success == true){
-  //   // Get user token and display view
-  //   displayView(profileview);
-  //   userToken = user.data;
-  //   getUserData(userToken);
-  //
-  // }else{
-  //   logInMessage.innerHTML = user.message;
-  // }
 }
 
-
+//sign-up new user
 function signUp(){
   var emailSignUp = document.getElementById("email-signUp").value;
   var nameSignUp  = document.getElementById("name-signUp").value;
@@ -195,109 +183,48 @@ function signUp(){
       else if(password != passwordRpt){
         psw_match.style.display = "block";
       }
-      else{
 
-        var req = new XMLHttpRequest();
-        req.onreadystatechange = function() {
-          if (this.readyState == 4){
-            if(this.status == 200){
-              var response = JSON.parse(req.responseText);
-              message.innerHTML = response.message;
 
-            } else{
-              message.innerHTML = message;
+      var req = new XMLHttpRequest();
+      req.onreadystatechange = function() {
+        if (this.readyState == 4){
+          if(this.status == 200){
+            var response = JSON.parse(req.responseText);
+            message.innerHTML = response.message;
 
-            }
+          } else{
+            message.innerHTML = message;
+
           }
         }
-        req.open("POST", "/sign-up", true);
-        req.setRequestHeader("Content-type", "application/json");
-        req.send(JSON.stringify(newUser));
       }
-    // var newUserProfile = serverstub.signUp(newUser);
-    // var message = document.getElementById("message");
-    // message.innerHTML = newUserProfile.message;
+      req.open("POST", "/sign-up", true);
+      req.setRequestHeader("Content-type", "application/json");
+      req.send(JSON.stringify(newUser));
+
+
 }
 
-function pswChange(){
-  var token = localStorage.getItem("token");
-  var oldPsw = document.getElementById("oldPsw").value;
-  var changePsw = document.getElementById("changePsw").value;
-  var pswRptnew = document.getElementById("pswRptnew").value;
-
-  var psw_len = document.getElementById("psw_len");
-  var psw_match = document.getElementById("psw_match");
-  var message = document.getElementById("passMessage");
-
-  var sendData = {'oldPassword': oldPsw, 'newPassword': changePsw};
-
-    //Reset hidden text
-  psw_len.style.display = "none";
-  psw_match.style.display = "none";
- //Password validation
-  if(changePsw.length < passWrdLen){
-    psw_len.style.display = "block";
-  }
-  else if(changePsw != pswRptnew){
-    psw_match.style.display = "block";
-  }
-  else if(oldPsw != password){
-    message.innerHTML = "Old password not correct!";
-  }
-  else{
-
-    var req = new XMLHttpRequest();
-    req.onreadystatechange = function(){
-    if (this.readyState == 4 && this.status == 200){
-        var response = JSON.parse(req.responseText);
-        message.innerHTML = response.message;
-    //     if(response.success){
-    //       console.log(response);
-    //       message.innerHTML = response.message;
-    //
-    //     } else{
-    //       console.log(response);
-    //       message.innerHTML = response.message;
-    //
-    //     }
-    // } else {
-    //   message.innerHTML = message;
-   }
-  }
-  req.open("PUT", "/change-password", true);
-  req.setRequestHeader("Content-type", "application/json");
-  req.setRequestHeader("Authorization", token);
-  req.send(JSON.stringify(sendData));
-  }
-
-      // serverstub.changePassword(userToken, oldPsw, changePsw);
-      // message.innerHTML = "password changed";
-}
-
+// ------------------HOME TAB---------------------------------
+//get user data, getdatabytoken
 function getUserData(){
   // returns the object containing firstname, familyname etc...
-  // var getUser = serverstub.getUserDataByToken(userToken);
-  // var userData = getUser.data;
-  var token = localStorage.getItem("token");
+  var token = localStorage.getItem("token"); //user token
 
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
-      if(this.readyState == 4){
-        if(this.status == 200){
-          var response = JSON.parse(req.responseText);
-          if(response.success){
-            var userData = response.data;
+      if(this.readyState == 4 && this.status == 200){
+        var response = JSON.parse(req.responseText);
+        if(response.success){
 
-            document.getElementById("nameLabel").innerHTML =   "Name:   " + userData.firstname + " " + userData.familyname;
-            document.getElementById("genderLabel").innerHTML = "Gender: " + userData.gender;
-            document.getElementById("cityLabel").innerHTML =   "City:   " + userData.city;
-            document.getElementById("countryLabel").innerHTML ="Country: " + userData.country;
-            document.getElementById("emailLabel").innerHTML =  "Email:  " + userData.email;
-
-        }
+          var userData = response.data;
+          document.getElementById("nameLabel").innerHTML =   "Name:   " + userData.firstname + " " + userData.familyname;
+          document.getElementById("genderLabel").innerHTML = "Gender: " + userData.gender;
+          document.getElementById("cityLabel").innerHTML =   "City:   " + userData.city;
+          document.getElementById("countryLabel").innerHTML ="Country: " + userData.country;
+          document.getElementById("emailLabel").innerHTML =  "Email:  " + userData.email;
       }
     }
-
   }
   req.open("GET", "/getdatatoken", true);
   req.setRequestHeader("Authorization", token);
@@ -306,7 +233,8 @@ function getUserData(){
 }
 
 var loggedInUsers = {}
-//postmessage
+
+//post to own wall, postmessage
 function postWall(){
 
   var token = localStorage.getItem("token");
@@ -318,18 +246,13 @@ function postWall(){
     console.log(postMessage)
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
-      if(this.readyState == 4){
-        if(this.status == 200){
-          var response = JSON.parse(req.responseText);
-          if(response.success){
-            console.log(response[0])
-          }else {
-            console.log(response)
-          }
-
-          // postMessage.innerHTML = response.message;
-          // console.log(response.message);
-          // displayOnUserWall();
+      if(this.readyState == 4 && this.status == 200){
+        var response = JSON.parse(req.responseText);
+        if(response.success){
+          console.log(response[0])
+        
+        }else {
+          console.log("Something went wrong");
         }
       }
     }
@@ -337,15 +260,9 @@ function postWall(){
     req.setRequestHeader("Content-Type", "application/json");
     req.setRequestHeader("Authorization", token);
     req.send(JSON.stringify(postMessage));
-
-  //Get user info
-  // var getUser = serverstub.getUserDataByToken(userToken);
-  // var userData = getUser.data;
-  // var email = userData.email;
-  // var postMess = serverstub.postMessage(userToken, newPost, email);
 }
 
-//getUserMessagesByToken
+//display messages, getUserMessagesByToken
 function displayWall(){
 
   var token = localStorage.getItem("token");
@@ -376,23 +293,14 @@ function displayWall(){
     req.setRequestHeader("Content-Type", "application/json");
     req.setRequestHeader("Authorization", token);
     req.send();
+
   } catch(e){
     console.error(e);
   }
-
-  // var getMessages = serverstub.getUserMessagesByToken(userToken);
-  // if (getMessages.success == true){
-  //   var messages = getMessages.data;
-  //   document.getElementById("wall").innerHTML = null;
-  //
-  //   for(i = 0; i < messages.length; i++){
-  //     document.getElementById("wall").innerHTML += "<p>From: " + messages[i].writer + "<br>";
-  //     document.getElementById("wall").innerHTML += messages[i].content + "<br></p>" ;
-  //   }
-  // }
 }
 
-//getUserMessagesByEmail
+//----------------------BROWSE TAB --------------------------
+//load user messages, getUserMessagesByEmail
 function loadMessages(){
 
   var token = localStorage.getItem("token");
@@ -401,51 +309,38 @@ function loadMessages(){
     var user = {"email": email};
     var req = new XMLHttpRequest();
     req.onreadystatechange = function(){
-      if(this.readyState == 4){
-        if(this.status == 200){
-          var response = JSON.parse(req.responseText);
-          if(response.success){
-            var messages = response.data;
-            document.getElementById("messageWall").innerHTML = null;
-            for(i = 0; i < messages.length; i++){
-                 document.getElementById("messageWall").innerHTML += "<p>" + "From " + messages[i].fromEmail + "<br>" + messages[i].message + "<br></p>";
-                 //document.getElementById("messageWall").innerHTML += messages[i].content + "<br></p>" ;
-                 console.log(messages[i].fromEmail);
-            }
-
-          } else {
-            console.log("Found no messages on this wall");
-            //document.getElementById("messageWall").innerHTML = null;
+      if(this.readyState == 4 && this.status == 200){
+        var response = JSON.parse(req.responseText);
+        if(response.success){
+          var messages = response.data;
+          document.getElementById("messageWall").innerHTML = null;
+          for(i = 0; i < messages.length; i++){
+               document.getElementById("messageWall").innerHTML +=
+               "<p>" + "From " + messages[i].fromEmail + "<br>" + messages[i].message + "<br>" + "To: " + messages[i].toEmail + "<br></p>";
           }
+        } else {
+          document.getElementById("messageWall").innerHTML = null;
         }
       }
     }
-    req.open("GET", "/getmessagesemail", true);
+    req.open("POST", "/getmessagesemail", true);
     req.setRequestHeader("Content-Type", "application/json");
     req.setRequestHeader("Authorization", token);
     req.send(JSON.stringify(user));
 
   } catch(e){
-    console.error("Failed to send request");
+    console.error(e);
   }
-  // var getMessages = serverstub.getUserMessagesByEmail(userToken, email);
-  // if (getMessages.success == true){
-  //   var messages = getMessages.data;
-  //   document.getElementById("messageWall").innerHTML = null;
-  //   for(i = 0; i < messages.length; i++){
-  //     document.getElementById("messageWall").innerHTML += "<p>From: " + messages[i].writer + "<br>";
-  //     document.getElementById("messageWall").innerHTML += messages[i].content + "<br></p>" ;
 }
 
-// getuserdatabyemail
+var otherEmail;
+
+//browse for a user, getuserdatabyemail
 function browseUser(){
 
-   var token = localStorage.getItem("token");
-   var email = document.getElementById("browseuser").value;
-   //var userInfo = serverstub.getUserDataByEmail(userToken, otherEmail);
-   try {
-     var userEmail = {"email": email};
-     console.log(userEmail)
+   var token = localStorage.getItem("token"); //user token
+   otherEmail = document.getElementById("browseuser").value; //searched user email
+
      var req = new XMLHttpRequest();
      req.onreadystatechange = function() {
        if(this.readyState == 4 && this.status == 200){
@@ -457,58 +352,45 @@ function browseUser(){
              browseUserInfo.style.display = "block";
              browseUserBlock.style.display = "none";
 
-             otherEmail = email;
              var userData = response.data;
              document.getElementById("nameBr").innerHTML =   "<p>" + "Name: " + userData.firstname + " " + userData.familyname + "<br>";
              document.getElementById("genderBr").innerHTML = "Gender: " + userData.gender + "<br>";
              document.getElementById("cityBr").innerHTML =   "City:   " + userData.city + "<br>";
              document.getElementById("countryBr").innerHTML ="Country: " + userData.country + "<br>";
              document.getElementById("emailBr").innerHTML =  "Email:  " + userData.email + "<br></p>";
-             loadMessages();
+             loadMessages(); //load user messages
            } else{
              document.getElementById("errorSearch").innerHTML = response.message;
            }
-       } else {
-         document.getElementById("errorSearch").innerHTML = response.message;
        }
      }
+     var userEmail = {'otherEmail': otherEmail};
+     console.log(userEmail)
      req.open("POST", "/getdataemail", true);
      req.setRequestHeader("Content-Type", "application/json");
      req.setRequestHeader("Authorization", token);
      req.send(JSON.stringify(userEmail));
-
-   } catch(e){
-     console.error(e);
-   }
-
-   //   var data = userInfo.message;
-   //   document.getElementById("errorSearch").innerHTML = data;
-
 }
 
-//getUserDataByEmail
+//post on other users wall, getUserDataByEmail
 function postOnUserWall(){
   //Get user info
   var token = localStorage.getItem("token");
-  //otherEmail = document.getElementById("browseuser").value;
   var messWall = document.getElementById("feedbackBox");
   var newPost = document.getElementById("postBoxBrowse").value;
 
   try {
-    var postMess = {"email": otherEmail, "message": newPost};
+    var postMess = {"message": newPost, "email": otherEmail};
     console.log(postMess)
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
-      if(this.readyState == 4){
-        if(this.status == 200){
-          var response = JSON.parse(req.responseText);
-          if(response.success){
-            var userData = response.data;
-            messWall.innerHTML = response.message;
-            console.log(response[0])
+      if(this.readyState == 4 && this.status == 200){
+        var response = JSON.parse(req.responseText);
+        if(response.success){
+          var userData = response.data;
+          if(userData.success){
+            newPost.innerHTML = response.message;
             displayOnUserWall();
-          }else {
-            console.log(response)
           }
         }
       }
@@ -517,31 +399,19 @@ function postOnUserWall(){
     req.setRequestHeader("Content-Type", "application/json");
     req.setRequestHeader("Authorization", token);
     req.send(JSON.stringify(postMess));
+
   } catch(e){
     console.error(e);
   }
+}
 
-  //var getUser = serverstub.getUserDataByEmail(userToken,otherEmail);  //getUserDataByToken(userToken);
-  // var userData = getUser.data;
-  // if(getUser.success == true){
-  // Save post
-  // var messWall = document.getElementById("feedbackBox");
-  // var newPost = document.getElementById("postBoxBrowse").value;
-  // var postMess = serverstub.postMessage(userToken, newPost, otherEmail);
-  //
-  // newPost.innerHTML = postMess.message;
-  // displayOnUserWall();
-  }
-
-
-//getUserMessagesByEmail
+//display user messages, getUserMessagesByEmail
 function displayOnUserWall(){
-  //otherEmail = document.getElementById("browseuser").value;
-  var token = localStorage.getItem("token");
-  var email = document.getElementById("findUser").value;
+
+  var token = localStorage.getItem("token"); //user token
 
   try{
-    var getMessages = {"email": email};
+    var getMessages = {"email": otherEmail};
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
       if(this.readyState == 4){
@@ -552,49 +422,84 @@ function displayOnUserWall(){
             document.getElementById("messageWall").innerHTML = null;
 
             for(i = 0; i < messages.length; i++){
-              document.getElementById("messageWall").innerHTML += "<p>" +"From: " + messages[i].fromEmail + "<br>" + messages[i].message + "<br>" + messages[i].toEmail + "<br></p>";
+              document.getElementById("messageWall").innerHTML +=
+              "<p>" +"Posted by: " + messages[i].fromEmail + "<br>" + messages[i].message + "<br>" + "To:" + messages[i].toEmail + "<br></p>";
             }
-
           }
         }
       }
     }
-    req.open("GET", "/getmessagesemail", true);
+    req.open("POST", "/getmessagesemail", true);
     req.setRequestHeader("Content-Type", "application/json");
     req.setRequestHeader("Authorization", token);
     req.send(JSON.stringify(getMessages));
   } catch(e){
     console.error(e);
   }
-
-  //var getMessages = serverstub.getUserMessagesByEmail(userToken,otherEmail)
-  // if (getMessages.success == true){
-  //   var messages = getMessages.data;
-  //   document.getElementById("messageWall").innerHTML = null;
-  //
-  //   for(i = 0; i < messages.length; i++){
-  //     document.getElementById("messageWall").innerHTML += "<p>From: " + messages[i].writer + "<br>";
-  //     document.getElementById("messageWall").innerHTML += messages[i].content + "<br></p>" ;
-  //   }
-  // }
 }
 
-// ---SIGN OUT-----------------
+//-------------------ACCOUNT TAB---------------------------
+//change password
+function pswChange(){
+  var token = localStorage.getItem("token");
+  var oldPsw = document.getElementById("oldPsw").value;
+  var changePsw = document.getElementById("changePsw").value;
+  var pswRptnew = document.getElementById("pswRptnew").value;
+
+  var psw_len = document.getElementById("psw_len");
+  var psw_match = document.getElementById("psw_match");
+  var message = document.getElementById("passMessage");
+
+  //Reset hidden text
+  psw_len.style.display = "none";
+  psw_match.style.display = "none";
+  //Password validation
+  if(changePsw.length < passWrdLen){
+    psw_len.style.display = "block";
+  }
+  else if(changePsw != pswRptnew){
+    psw_match.style.display = "block";
+  }
+  else if(oldPsw != password){
+    message.innerHTML = "Old password not correct!";
+  }
+  else{
+
+    var req = new XMLHttpRequest();
+    req.onreadystatechange = function(){
+    if (this.readyState == 4 && this.status == 200){
+      var response = JSON.parse(req.responseText);
+      message.innerHTML = response.message;
+      // if(response.success){
+      //   message.innerHTML = "Password changed";
+      // } else{
+      //   psw_len.style.display = "Something went wrong";
+      // }
+    }
+  }
+  var sendData = {'oldPassword': oldPsw, 'newPassword': pswRptnew};
+  console.log(sendData)
+  req.open("PUT", "/change-password", true);
+  req.setRequestHeader("Content-type", "application/json");
+  req.setRequestHeader("Authorization", token);
+  req.send(JSON.stringify(sendData));
+  }
+}
+
+// ---------------SIGN OUT USER-----------------
 function signOut(){
 
-  var token = localStorage.getItem("token");
+  var token = localStorage.getItem("token"); //user-token
+
   try {
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
-      if(this.readyState == 4){
-        if(this.status == 200){
-          var response = JSON.parse(req.responseText);
-          if (response.success){
-            //userToken = null;
-            localStorage.removeItem("token");
-            welcomeview = document.getElementById("welcomeview");
-            displayView(welcomeview);
-          }
+      if(this.readyState == 4 && this.status == 200){
+        var response = JSON.parse(req.responseText);
+        if (response.success){
+          localStorage.removeItem("token"); //remove user-token
+          welcomeview = document.getElementById("welcomeview");
+          displayView(welcomeview); //display login page
         }
       }
     }
@@ -602,10 +507,8 @@ function signOut(){
     req.setRequestHeader("Content-Type", "application/json");
     req.setRequestHeader("Authorization", token);
     req.send();
+
   } catch(e) {
     console.error(e);
   }
-  //var sendtoken = {"token": userToken};
-  // serverstub.signOut(userToken);
-  // displayView(welcomeview);
 }
