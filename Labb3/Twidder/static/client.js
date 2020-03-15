@@ -15,54 +15,98 @@ window.onload = function(){
   var token = localStorage.getItem("token");
   profileview = document.getElementById("profileview");
   welcomeview = document.getElementById("welcomeview");
-
+  //connect_socket()
   if (token){
     connect_socket();
     displayView(profileview);
     getUserData();
+
   }else{
     displayView(welcomeview);
   }
-  //connect_socket();
+
 
 };
 
 function connect_socket(){
 
-  var socket = new WebSocket("wss://" + document.domain + ':' + port + "/api");
+  // if(window.location.protocol == "https:"){
+  //   var ws_scheme = "wss://";
+  // }else {
+  //   var ws_scheme = "ws://";
+  // }
+  // var host = location.host;
+  var socket = new WebSocket("ws://" + document.domain+ ':' + port + "/api");
+  //var socket = new WebSocket(ws_scheme+host+"/api"); //127.0.0.1:5000/api");
+  console.log("Calling socket");
+  socket.onopen = function (){
+    console.log("WebSocket we are here");
+    var msg = {'token': localStorage.getItem('token')};
 
-  socket.onopen = function(){
-    var data = {
-      'token': localStorage.getItem('token')
-      //'email': localStorage.getItem('email')
-    };
-    console.log(data["token"]);
-    socket.send(JSON.stringify(data));
+    if(msg !== undefined){
+      console.log(msg["token"]);
+      socket.send(JSON.stringify(msg));
+    }
 
-  }
-
+  };
   socket.onmessage = function(event){
-    //window.alert("Connection websocket");
-    console.log(event.data);
+    console.log(event.data)
     var msg = JSON.parse(event.data);
-
     if(msg.success == false){
-      localStorage.removeItem("token");
-      console.log(msg.data);
-      window.onload();
-      return
-    }else {
-      console.log("Successfully signed in")
+      signOut();
+      displayView(welcomeview);
+      //var data = msg.data;
+      //localStorage.removeItem("token");
+      // console.log(msg.data);
+      // window.onload();
+      // return
+    } else {
+      console.log("Successfully signed in!")
     }
   };
 
   socket.onclose = function() {
+    signOut();
+    displayView(welcomeview);
     console.log("Websocket closed");
   };
 
   socket.onerror = function(){
     console.log("Error in websocket");
   };
+
+
+  // var socket = new WebSocket("ws://" + document.domain + ":5000/api");
+  // //var data = localStorage.getItem('token');
+  //
+  // socket.onopen = function(){
+  //
+  //   var data = {
+  //     'token': localStorage.getItem('token')
+  //     'email': localStorage.getItem('email')
+  //   };
+  //   console.log(data["token"]);
+  //   socket.send(JSON.stringify(data));
+  //   console.log("tja")
+  //
+  // }
+  //
+  // socket.onmessage = function(event){
+  //   //window.alert("Connection websocket");
+  //   console.log(event.data);
+  //   var msg = JSON.parse(event.data);
+  //
+  //   if(msg.success == false){
+  //     localStorage.removeItem('token');
+  //     console.log(msg.data);
+  //     socket.close()
+  //     return
+  //   }else {
+  //     console.log("Successfully signed in")
+  //   }
+  // };
+  //
+  //
 
 }
 
@@ -250,7 +294,7 @@ function postWall(){
         var response = JSON.parse(req.responseText);
         if(response.success){
           console.log(response[0])
-        
+
         }else {
           console.log("Something went wrong");
         }

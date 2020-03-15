@@ -1,4 +1,5 @@
 import sqlite3
+import os
 from flask import Flask, request, jsonify, send_from_directory, render_template
 #import Twidder.database_helper
 import database_helper
@@ -9,8 +10,10 @@ from geventwebsocket import WebSocketError
 #from Twidder import database_helper
 
 #app = Flask(__name__)
-app = Flask('__name__')
+app = Flask(__name__)
+#app.run()
 #app.debug = True
+#active_sockets = {}
 active_sockets = dict()
 
 @app.teardown_request
@@ -26,47 +29,37 @@ def root():
 @app.route('/api')
 def api():
     if request.environ.get('wsgi.websocket'):
+        print("Working?!")
         ws = request.environ['wsgi.websocket']
-        msg = ws.recieve()
+        msg = ws.receive()
         data = json.loads(msg)
-        print(data)
-
-        user_id = database_helper.tokenToEmail(data["token"])
+        #print(token)
+        token = data["token"]
+        user_id = database_helper.tokenToEmail(token)
 
         if not user_id:
             ws.send(json.dumps({"success": False, "message": "no such email"}))
-
+        #user_id = user[0]
+        #If the user refreshes the page remove and close the previous websocket
         try:
-            if data['email'] in active_sockets:
-                print(data['email'] + ' has a socket')
-                print('Socket saved with ' + data['email'])
-                active_sockets[user_id].close()
-                active_sockets.pop(user_id)
-            active_sockets[user_id] = ws
-            ws.send(json.dumps({"success": True, "msg":"Welcome homie"}))
-
+            if user_id["email"] in active_sockets:
+                active_sockets[user_id["email"]].close()
+                active_sockets.pop(user_id["email"])
+            active_sockets[user_id["email"]] = ws
+            ws.send(json.dumps({"success": True, "msg":"Welcome"}))
+            #Enter while loop and call ws.receive to not close the socket
             while True:
-                object = ws.receive()
-                if object == None:
-                    #active_sockets.pop(data['email'], None)
-                    ws.close
+                obj = ws.receive()
+                if obj == None:
+                    ws.close()
                     return ''
-
         except WebSocketError:
             print('Web socket connection error')
             sockets.pop(data['email'], None)
-        # if user_id in active_sockets:
-        #     active_sockets[user_id].close()
-        #     active_sockets.pop(user_id)
-        # active_sockets[user_id] = ws
-        # ws.send(json.dumps({"success": True, "message": "Welcome"}))
-        #
-        # while True:
-        #     object = ws.recieve()
-        #     if object == None:
-        #         ws.close()
-        #         return ''
+
     return ''
+
+
 
 # sign in existing user
 @app.route('/sign-in',methods = ['POST'])
@@ -192,7 +185,7 @@ def get_user_data_by_email():
     data = database_helper.tokenToEmail(token)
 
     # if email in data and token in data
-    #if data['email'] == email and data['token'] == token:
+    #if data['otherEmail'] == email and data['token'] == token:
     if data['token'] == token:
         #fetch user data by email
         result = database_helper.get_user_data_by_email(email)
@@ -252,8 +245,9 @@ def post_message():
     else: #if email sender is false
         return jsonify({'success': False, 'message': "No such user"})
 
-if __name__=='__main__':
+#port = int(os.environ.get("PORT", 5000))
+if __name__=="__main__":
      #app.run(debug=True)
-     #app.debug = True
+     app.debug = True
      http_server = WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
      http_server.serve_forever()
