@@ -1,4 +1,4 @@
-//Global variables
+  //Global variables
 var welcomeview;
 var profileview;
 var passWrdLen = 3;
@@ -15,7 +15,6 @@ window.onload = function(){
   var token = localStorage.getItem("token");
   profileview = document.getElementById("profileview");
   welcomeview = document.getElementById("welcomeview");
-  //connect_socket()
   if (token){
     connect_socket();
     displayView(profileview);
@@ -28,16 +27,10 @@ window.onload = function(){
 
 };
 
+// connect to socket
 function connect_socket(){
 
-  // if(window.location.protocol == "https:"){
-  //   var ws_scheme = "wss://";
-  // }else {
-  //   var ws_scheme = "ws://";
-  // }
-  // var host = location.host;
-  var socket = new WebSocket("ws://" + document.domain+ ':' + port + "/api");
-  //var socket = new WebSocket(ws_scheme+host+"/api"); //127.0.0.1:5000/api");
+  var socket = new WebSocket("ws://" + document.domain + ':' + port + "/api");
   console.log("Calling socket");
   socket.onopen = function (){
     console.log("WebSocket we are here");
@@ -52,14 +45,11 @@ function connect_socket(){
   socket.onmessage = function(event){
     console.log(event.data)
     var msg = JSON.parse(event.data);
-    if(msg.success == false){
-      signOut();
-      displayView(welcomeview);
-      //var data = msg.data;
-      //localStorage.removeItem("token");
-      // console.log(msg.data);
-      // window.onload();
-      // return
+    if(msg.success == false && msg.message == "logout" ){
+
+      console.log(msg.data);
+      socket.onclose();
+
     } else {
       console.log("Successfully signed in!")
     }
@@ -67,7 +57,7 @@ function connect_socket(){
 
   socket.onclose = function() {
     signOut();
-    displayView(welcomeview);
+    window.onload();
     console.log("Websocket closed");
   };
 
@@ -75,42 +65,9 @@ function connect_socket(){
     console.log("Error in websocket");
   };
 
-
-  // var socket = new WebSocket("ws://" + document.domain + ":5000/api");
-  // //var data = localStorage.getItem('token');
-  //
-  // socket.onopen = function(){
-  //
-  //   var data = {
-  //     'token': localStorage.getItem('token')
-  //     'email': localStorage.getItem('email')
-  //   };
-  //   console.log(data["token"]);
-  //   socket.send(JSON.stringify(data));
-  //   console.log("tja")
-  //
-  // }
-  //
-  // socket.onmessage = function(event){
-  //   //window.alert("Connection websocket");
-  //   console.log(event.data);
-  //   var msg = JSON.parse(event.data);
-  //
-  //   if(msg.success == false){
-  //     localStorage.removeItem('token');
-  //     console.log(msg.data);
-  //     socket.close()
-  //     return
-  //   }else {
-  //     console.log("Successfully signed in")
-  //   }
-  // };
-  //
-  //
-
 }
 
-
+//-----------------TABS---------------------------
 
 function activeTab(id){
   var homeTab = document.getElementById("HomeTab");
@@ -228,7 +185,6 @@ function signUp(){
         psw_match.style.display = "block";
       }
 
-
       var req = new XMLHttpRequest();
       req.onreadystatechange = function() {
         if (this.readyState == 4){
@@ -245,7 +201,6 @@ function signUp(){
       req.open("POST", "/sign-up", true);
       req.setRequestHeader("Content-type", "application/json");
       req.send(JSON.stringify(newUser));
-
 
 }
 
@@ -295,8 +250,6 @@ function postWall(){
         if(response.success){
           console.log(response[0])
 
-        }else {
-          console.log("Something went wrong");
         }
       }
     }
@@ -501,26 +454,25 @@ function pswChange(){
   if(changePsw.length < passWrdLen){
     psw_len.style.display = "block";
   }
-  else if(changePsw != pswRptnew){
+  if(changePsw != pswRptnew){
     psw_match.style.display = "block";
   }
-  else if(oldPsw != password){
+  if(oldPsw != password){
     message.innerHTML = "Old password not correct!";
   }
-  else{
 
     var req = new XMLHttpRequest();
     req.onreadystatechange = function(){
     if (this.readyState == 4 && this.status == 200){
       var response = JSON.parse(req.responseText);
-      message.innerHTML = response.message;
-      // if(response.success){
-      //   message.innerHTML = "Password changed";
+      //message.innerHTML = response.message;
+      if(response.success){
+        message.innerHTML = response.message; }
       // } else{
-      //   psw_len.style.display = "Something went wrong";
+      //   message.innerHTML = response.message;
       // }
     }
-  }
+
   var sendData = {'oldPassword': oldPsw, 'newPassword': pswRptnew};
   console.log(sendData)
   req.open("PUT", "/change-password", true);

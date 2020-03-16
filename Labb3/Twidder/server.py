@@ -33,33 +33,27 @@ def api():
         ws = request.environ['wsgi.websocket']
         msg = ws.receive()
         data = json.loads(msg)
-        #print(token)
+
         token = data["token"]
         user_id = database_helper.tokenToEmail(token)
 
         if not user_id:
-            ws.send(json.dumps({"success": False, "message": "no such email"}))
-        #user_id = user[0]
-        #If the user refreshes the page remove and close the previous websocket
-        try:
-            if user_id["email"] in active_sockets:
-                active_sockets[user_id["email"]].close()
-                active_sockets.pop(user_id["email"])
-            active_sockets[user_id["email"]] = ws
-            ws.send(json.dumps({"success": True, "msg":"Welcome"}))
-            #Enter while loop and call ws.receive to not close the socket
-            while True:
-                obj = ws.receive()
-                if obj == None:
-                    ws.close()
-                    return ''
-        except WebSocketError:
-            print('Web socket connection error')
-            sockets.pop(data['email'], None)
+             ws.send(json.dumps({"success": False, "message": "no such email"}))
 
+        if user_id['email'] in active_sockets:
+            old_active_sockets = active_sockets[user_id["email"]]
+            old_active_sockets.send(json.dumps({"success": False, "message":"logout"}))
+            # active_sockets[user_id["email"]].close()
+            # active_sockets.pop(user_id["email"])
+        active_sockets[user_id["email"]] = ws
+        ws.send(json.dumps({"success": True, "msg":"Welcome"}))
+        #Enter while loop and call ws.receive to not close the socket
+        while True:
+            obj = ws.receive()
+            if obj == None:
+                ws.close()
+                return ''
     return ''
-
-
 
 # sign in existing user
 @app.route('/sign-in',methods = ['POST'])
@@ -155,7 +149,6 @@ def change_password():
     #if password is less than 4 characters
     if len(newPassword) < 4:
         return json.dumps({'success': False, 'message': "Password must be at least 4 characters long"})
-
 
     #change current password to new password
     result = database_helper.change_password(token,newPassword,oldPassword)
