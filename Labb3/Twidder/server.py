@@ -9,10 +9,9 @@ from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
 #from Twidder import database_helper
 
-#app = Flask(__name__)
 app = Flask(__name__)
 #app.run()
-#app.debug = True
+
 #active_sockets = {}
 active_sockets = dict()
 
@@ -22,7 +21,6 @@ def after_request(exception):
 
 @app.route('/')
 def root():
-    #return send_from_directory('static', 'client.html')
     #return app.send_static_file('client.html')
     return render_template('client.html')
 
@@ -39,20 +37,24 @@ def api():
 
         if not user_id:
              ws.send(json.dumps({"success": False, "message": "no such email"}))
+        try:
+            if user_id["email"] in active_sockets:
+                old_active_sockets = active_sockets[user_id["email"]]
+                old_active_sockets.send(json.dumps({"success": False, "message":"logout"}))
+                # active_sockets[user_id["email"]].close()
+                # active_sockets.pop(user_id["email"])
+            active_sockets[user_id["email"]] = ws
+            ws.send(json.dumps({"success": True, "msg":"Welcome"}))
+            #Enter while loop and call ws.receive to not close the socket
+            while True:
+                obj = ws.receive()
+                if obj == None:
+                    ws.close()
+                    return ''
 
-        if user_id['email'] in active_sockets:
-            old_active_sockets = active_sockets[user_id["email"]]
-            old_active_sockets.send(json.dumps({"success": False, "message":"logout"}))
-            # active_sockets[user_id["email"]].close()
-            # active_sockets.pop(user_id["email"])
-        active_sockets[user_id["email"]] = ws
-        ws.send(json.dumps({"success": True, "msg":"Welcome"}))
-        #Enter while loop and call ws.receive to not close the socket
-        while True:
-            obj = ws.receive()
-            if obj == None:
-                ws.close()
-                return ''
+        except WebSocketError:
+            print('Web socket connection error')
+            sockets.pop(data['email'], None)
     return ''
 
 # sign in existing user

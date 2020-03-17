@@ -1,17 +1,17 @@
-  //Global variables
+//Global variables
 var welcomeview;
 var profileview;
-var passWrdLen = 3;
+var passWrdLen = 4;
 var password = "";
 var port = "5000";
 
 displayView = function(view){
-// the code required to display a view
+  // the code required to display a view
   document.getElementById("displayWindow").innerHTML = view.innerHTML;
 };
 
 window.onload = function(){
-//code that is executed as the page is loaded.
+  //code that is executed as the page is loaded.
   var token = localStorage.getItem("token");
   profileview = document.getElementById("profileview");
   welcomeview = document.getElementById("welcomeview");
@@ -51,7 +51,7 @@ function connect_socket(){
       socket.onclose();
 
     } else {
-      console.log("Successfully signed in!")
+      console.log("Successfully signed in!");
     }
   };
 
@@ -70,43 +70,43 @@ function connect_socket(){
 //-----------------TABS---------------------------
 
 function activeTab(id){
-  var homeTab = document.getElementById("HomeTab");
-  var browseTab = document.getElementById("BrowseTab");
-  var accTab = document.getElementById("AccTab");
+var homeTab = document.getElementById("HomeTab");
+var browseTab = document.getElementById("BrowseTab");
+var accTab = document.getElementById("AccTab");
 
-  var homeBtn = document.getElementById("HomeBtn");
-  var browseBtn = document.getElementById("BrowseBtn");
-  var accBtn = document.getElementById("AccBtn");
+var homeBtn = document.getElementById("HomeBtn");
+var browseBtn = document.getElementById("BrowseBtn");
+var accBtn = document.getElementById("AccBtn");
 
-  //Display right color and page
-  if( id == homeTab ){
-    homeTab.style.display = "block";
-    browseTab.style.display = "none";
-    accTab.style.display = "none";
+//Display right color and page
+if( id == homeTab ){
+  homeTab.style.display = "block";
+  browseTab.style.display = "none";
+  accTab.style.display = "none";
 
-    homeBtn.style.background = "#6e6e6e";
-    browseBtn.style.background = "none";
-    accBtn.style.background = "none";
-  }
-  else if(id == browseTab){
-    homeTab.style.display = "none";
-    browseTab.style.display = "block";
-    accTab.style.display = "none";
+  homeBtn.style.background = "#6e6e6e";
+  browseBtn.style.background = "none";
+  accBtn.style.background = "none";
+}
+else if(id == browseTab){
+  homeTab.style.display = "none";
+  browseTab.style.display = "block";
+  accTab.style.display = "none";
 
-    homeBtn.style.background = "none";
-    browseBtn.style.background = "#6e6e6e";
-    accBtn.style.background = "none";
+  homeBtn.style.background = "none";
+  browseBtn.style.background = "#6e6e6e";
+  accBtn.style.background = "none";
 
-  }
-  else if(id == accTab){
-    homeTab.style.display = "none";
-    browseTab.style.display = "none";
-    accTab.style.display = "Block";
+}
+else if(id == accTab){
+  homeTab.style.display = "none";
+  browseTab.style.display = "none";
+  accTab.style.display = "Block";
 
-    homeBtn.style.background = "none";
-    browseBtn.style.background = "none";
-    accBtn.style.background = "#6e6e6e";
-  }
+  homeBtn.style.background = "none";
+  browseBtn.style.background = "none";
+  accBtn.style.background = "#6e6e6e";
+}
 }
 
 //-----------------WELCOME PAGE -----------------------
@@ -467,11 +467,13 @@ function pswChange(){
       var response = JSON.parse(req.responseText);
       //message.innerHTML = response.message;
       if(response.success){
-        message.innerHTML = response.message; }
+        message.innerHTML = response.message;
+      }
       // } else{
       //   message.innerHTML = response.message;
       // }
     }
+  }
 
   var sendData = {'oldPassword': oldPsw, 'newPassword': pswRptnew};
   console.log(sendData)
@@ -479,7 +481,7 @@ function pswChange(){
   req.setRequestHeader("Content-type", "application/json");
   req.setRequestHeader("Authorization", token);
   req.send(JSON.stringify(sendData));
-  }
+
 }
 
 // ---------------SIGN OUT USER-----------------
